@@ -23,6 +23,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.tusk.data.models.TaskItem
 import com.example.tusk.ui.theme.LightGrayColorBackground
 import com.example.tusk.ui.theme.TuskTheme
 import com.example.tusk.ui.viewmodel.TaskViewModel
@@ -74,10 +75,23 @@ fun TuskApp(
                 .padding(innerPadding)
         ) {
             composable(route = TuskAppScreens.Home.name) {
-                HomeScreen(navigateToEditScreen = { navController.navigate(TuskAppScreens.Edit.name) })
+                HomeScreen(
+                    navigateToEditScreen = { navController.navigate(TuskAppScreens.Edit.name) },
+                    todayTasks = filterTodayAndTomorrowTasks(
+                        taskList = uiState.tasks,
+                        isToday = true
+                    ),
+                    tomorrowTasks = filterTodayAndTomorrowTasks(
+                        taskList = uiState.tasks,
+                        isToday = false
+                    )
+                )
             }
             composable(route = TuskAppScreens.Add.name) {
-                InputScreen()
+                InputScreen(onDone = {
+                    viewModel.addTask(it)
+                    navController.popBackStack()
+                })
             }
             composable(route = TuskAppScreens.Edit.name) {
                 InputScreen()
@@ -87,6 +101,19 @@ fun TuskApp(
     }
 }
 
+private fun filterTodayAndTomorrowTasks(
+    isToday: Boolean,
+    taskList: List<TaskItem>
+): List<TaskItem> {
+    if (isToday) {
+        return taskList.filter { taskItem ->
+            taskItem.forToday
+        }
+    }
+    return taskList.filter { taskItem ->
+        !taskItem.forToday
+    }
+}
 
 @Preview(showBackground = true, name = "TuskAppPreview")
 @Composable

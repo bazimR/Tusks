@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -36,8 +37,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.example.tusk.data.models.TaskItem
 import com.example.tusk.ui.theme.GrayColorText
 import com.example.tusk.ui.theme.LightGrayText
 import com.example.tusk.ui.theme.MutedGrayColor
@@ -47,7 +50,7 @@ import com.example.tusk.ui.theme.TitleGrayColor
 
 @Composable
 fun HomeScreen(
-    navigateToEditScreen: () -> Unit
+    navigateToEditScreen: () -> Unit, todayTasks: List<TaskItem>, tomorrowTasks: List<TaskItem>
 ) {
     Column(
         modifier = Modifier
@@ -59,20 +62,26 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            navigateToEditScreen = navigateToEditScreen
+            navigateToEditScreen = navigateToEditScreen, todayTasks = todayTasks
         )
         //tomorrow section
         TomorrowTasks(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f), navigateToEditScreen = navigateToEditScreen
+                .weight(1f),
+            navigateToEditScreen = navigateToEditScreen,
+            tomorrowTasks = tomorrowTasks
         )
 
     }
 }
 
 @Composable
-private fun TomorrowTasks(modifier: Modifier, navigateToEditScreen: () -> Unit) {
+private fun TomorrowTasks(
+    modifier: Modifier,
+    navigateToEditScreen: () -> Unit,
+    tomorrowTasks: List<TaskItem>
+) {
     Column(
         modifier = modifier
     ) {
@@ -94,15 +103,29 @@ private fun TomorrowTasks(modifier: Modifier, navigateToEditScreen: () -> Unit) 
             contentPadding = PaddingValues(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            items(10) {
-                InActiveTaskItem(navigateToEditScreen = navigateToEditScreen)
+            if (tomorrowTasks.isEmpty()) {
+                item {
+                    Text(
+                        text = "No tasks for tomorrow",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                items(tomorrowTasks) { item ->
+                    InActiveTaskItem(navigateToEditScreen = navigateToEditScreen, taskItem = item)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun TodayTasks(modifier: Modifier, navigateToEditScreen: () -> Unit) {
+private fun TodayTasks(
+    modifier: Modifier,
+    navigateToEditScreen: () -> Unit,
+    todayTasks: List<TaskItem>
+) {
     Column(
         modifier = modifier
     ) {
@@ -136,15 +159,25 @@ private fun TodayTasks(modifier: Modifier, navigateToEditScreen: () -> Unit) {
             contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            items(10) {
-                ActiveTaskItem(navigateToEditScreen)
+            if (todayTasks.isEmpty()) {
+                item {
+                    Text(
+                        text = "No tasks for today",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                items(todayTasks) { item ->
+                    ActiveTaskItem(navigateToEditScreen, taskItem = item)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun InActiveTaskItem(navigateToEditScreen: () -> Unit) {
+private fun InActiveTaskItem(navigateToEditScreen: () -> Unit, taskItem: TaskItem) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -166,7 +199,7 @@ private fun InActiveTaskItem(navigateToEditScreen: () -> Unit) {
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Lorem ipsum dolor",
+                text = taskItem.title,
                 maxLines = 2,
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight(600),
@@ -174,14 +207,14 @@ private fun InActiveTaskItem(navigateToEditScreen: () -> Unit) {
                 )
             )
             Text(
-                text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+                text = taskItem.desc,
                 maxLines = 2,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = GrayColorText,
                 )
             )
             Text(
-                text = "12:43 PM",
+                text = taskItem.time,
                 maxLines = 2,
                 style = MaterialTheme.typography.bodySmall.copy(
                     color = LightGrayText,
@@ -194,19 +227,17 @@ private fun InActiveTaskItem(navigateToEditScreen: () -> Unit) {
 
 
 @Composable
-private fun ActiveTaskItem(navigateToEditScreen: () -> Unit) {
+private fun ActiveTaskItem(navigateToEditScreen: () -> Unit, taskItem: TaskItem) {
     var checked by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-//            .clip(shape = MaterialTheme.shapes.large)
-//            .background(Color.White)
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(
             onCheckedChange = { checked = !checked },
-            checked = checked,
+            checked = taskItem.isCompleted,
             colors = CheckboxDefaults.colors(
                 checkmarkColor = Color.White,
                 checkedColor = Color.Black,
@@ -215,7 +246,7 @@ private fun ActiveTaskItem(navigateToEditScreen: () -> Unit) {
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Lorem ipsum dolor",
+                text = taskItem.title,
                 maxLines = 2,
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight(600),
@@ -228,7 +259,7 @@ private fun ActiveTaskItem(navigateToEditScreen: () -> Unit) {
                 )
             )
             Text(
-                text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+                text = taskItem.desc,
                 maxLines = 2,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = if (checked) MutedGrayColor else GrayColorText,
@@ -240,7 +271,7 @@ private fun ActiveTaskItem(navigateToEditScreen: () -> Unit) {
                 )
             )
             Text(
-                text = "12:43 PM",
+                text = taskItem.time,
                 maxLines = 2,
                 style = MaterialTheme.typography.bodySmall.copy(
                     color = if (checked) MutedGrayColor else LightGrayText,

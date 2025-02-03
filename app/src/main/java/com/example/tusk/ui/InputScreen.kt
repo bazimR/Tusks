@@ -1,5 +1,6 @@
 package com.example.tusk.ui
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,13 +12,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TimeInput
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,32 +37,53 @@ import com.example.tusk.ui.theme.TuskTheme
 import java.util.Calendar
 
 @Composable
-fun InputScreen( onDone: (TaskItem) -> Unit = {}) {
-    var showTimePicker by remember { mutableStateOf(true) }
+fun InputScreen(onDone: (TaskItem) -> Unit = {}) {
+    var showTimePicker by remember { mutableStateOf(false) }
     var isToday by remember { mutableStateOf(true) }
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var time by remember { mutableStateOf("") }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(state = rememberScrollState())
             .padding(horizontal = 12.dp)
     ) {
-        TextField(value = "", onValueChange = {}, modifier = Modifier.fillMaxWidth(), label = {
-            Text(
-                text = "Name", style = MaterialTheme.typography.titleMedium
-            )
-        }, singleLine = true)
+        TextField(
+            value = name,
+            onValueChange = { name = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = {
+                Text(
+                    text = "Name", style = MaterialTheme.typography.titleMedium
+                )
+            },
+            singleLine = true
+        )
         Spacer(modifier = Modifier.height(16.dp))
-        TextField(value = "", onValueChange = {}, modifier = Modifier.fillMaxWidth(), label = {
-            Text(
-                text = "Description", style = MaterialTheme.typography.titleMedium
-            )
-        }, maxLines = 2)
+        TextField(
+            value = description,
+            onValueChange = { description = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = {
+                Text(
+                    text = "Description", style = MaterialTheme.typography.titleMedium
+                )
+            },
+            maxLines = 2
+        )
         Spacer(modifier = Modifier.height(32.dp))
         Box(propagateMinConstraints = false, modifier = Modifier.fillMaxWidth()) {
             if (!showTimePicker) Button(onClick = { showTimePicker = true }) {
                 Text(text = "set time")
             }
-            if (showTimePicker) TimePicker(onConfirm = {}, onDismiss = { showTimePicker = false })
+            if (showTimePicker) TimePickerDialog(
+                onConfirm = {
+                    time = it
+                    showTimePicker = false
+                },
+                onDismiss = { showTimePicker = false })
         }
         Spacer(modifier = Modifier.height(16.dp))
         Row(
@@ -76,7 +99,18 @@ fun InputScreen( onDone: (TaskItem) -> Unit = {}) {
             Switch(checked = isToday, onCheckedChange = { isToday = !isToday })
         }
         Spacer(modifier = Modifier.height(32.dp))
-        Button(onClick = {}, modifier = Modifier.fillMaxWidth()) {
+        Button(onClick = {
+            val newTaskItem =
+                TaskItem(
+                    id = Math.random().toInt(),
+                    title = name,
+                    desc = description,
+                    time = time,
+                    forToday = isToday,
+                )
+
+            onDone(newTaskItem)
+        }, modifier = Modifier.fillMaxWidth()) {
             Text("Done", style = MaterialTheme.typography.bodyMedium)
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -91,29 +125,44 @@ fun InputScreen( onDone: (TaskItem) -> Unit = {}) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TimePicker(
-    onConfirm: () -> Unit,
+fun TimePickerDialog(
+    onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val currentTime = Calendar.getInstance()
-
     val timePickerState = rememberTimePickerState(
         initialHour = currentTime.get(Calendar.HOUR_OF_DAY),
         initialMinute = currentTime.get(Calendar.MINUTE),
         is24Hour = false,
     )
 
-    Column {
-        TimeInput(
-            state = timePickerState,
-        )
-        Button(onClick = onDismiss) {
-            Text("Dismiss picker")
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Select Time") },
+        text = {
+            Column {
+                TimePicker(state = timePickerState)
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                val hour =
+                    if (timePickerState.hour > 12) timePickerState.hour % 12 else timePickerState.hour
+                val minute = timePickerState.minute
+                val amOrPm = if (timePickerState.isAfternoon) "pm" else "am"
+                val formattedTime = "$hour:$minute $amOrPm"
+                Log.d("tome", "TimePickerDialog: $formattedTime")
+                onConfirm(formattedTime)
+            }) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Dismiss")
+            }
         }
-        Button(onClick = onConfirm) {
-            Text("Confirm selection")
-        }
-    }
+    )
 }
 
 @Preview(showBackground = true)
