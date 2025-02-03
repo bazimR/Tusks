@@ -84,7 +84,11 @@ fun TuskApp(
                     tomorrowTasks = filterTodayAndTomorrowTasks(
                         taskList = uiState.tasks,
                         isToday = false
-                    )
+                    ),
+                    handleTaskCompleted = { viewModel.taskComplete(it) },
+                    deleteTask = {
+                        viewModel.deleteTask(it.id)
+                    }
                 )
             }
             composable(route = TuskAppScreens.Add.name) {

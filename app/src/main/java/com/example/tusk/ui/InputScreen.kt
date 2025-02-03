@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -29,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -42,7 +44,7 @@ fun InputScreen(onDone: (TaskItem) -> Unit = {}) {
     var isToday by remember { mutableStateOf(true) }
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var time by remember { mutableStateOf("") }
+    var time by remember { mutableStateOf("9:00 AM") }
 
     Column(
         modifier = Modifier
@@ -66,11 +68,13 @@ fun InputScreen(onDone: (TaskItem) -> Unit = {}) {
             value = description,
             onValueChange = { description = it },
             modifier = Modifier.fillMaxWidth(),
+
             label = {
                 Text(
                     text = "Description", style = MaterialTheme.typography.titleMedium
                 )
             },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             maxLines = 2
         )
         Spacer(modifier = Modifier.height(32.dp))
@@ -102,7 +106,6 @@ fun InputScreen(onDone: (TaskItem) -> Unit = {}) {
         Button(onClick = {
             val newTaskItem =
                 TaskItem(
-                    id = Math.random().toInt(),
                     title = name,
                     desc = description,
                     time = time,
@@ -148,8 +151,8 @@ fun TimePickerDialog(
             Button(onClick = {
                 val hour =
                     if (timePickerState.hour > 12) timePickerState.hour % 12 else timePickerState.hour
-                val minute = timePickerState.minute
-                val amOrPm = if (timePickerState.isAfternoon) "pm" else "am"
+                val minute = if (timePickerState.minute == 0) "00" else timePickerState.minute
+                val amOrPm = if (timePickerState.isAfternoon) "PM" else "AM"
                 val formattedTime = "$hour:$minute $amOrPm"
                 Log.d("tome", "TimePickerDialog: $formattedTime")
                 onConfirm(formattedTime)

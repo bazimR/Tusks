@@ -7,6 +7,7 @@ import com.example.tusk.data.state.TaskListUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.util.UUID
 
 private const val TAG = "TaskViewModel"
 
@@ -16,7 +17,7 @@ class TaskViewModel : ViewModel() {
 
     fun addTask(task: TaskItem) {
         _taskListUi.update { instance ->
-            instance.copy(tasks = instance.tasks + task)
+            instance.copy(tasks = instance.tasks + task.copy(id = UUID.randomUUID().hashCode()))
         }
 
         Log.d(TAG, "addTask: ${taskListUi.value.tasks}")
@@ -40,6 +41,20 @@ class TaskViewModel : ViewModel() {
                     taskItem
                 }
             })
+        }
+    }
+
+    fun taskComplete(task: TaskItem) {
+        _taskListUi.update { instance ->
+            instance.copy(
+                tasks = instance.tasks.map { taskItem ->
+                    if (task.id == taskItem.id) {
+                        taskItem.copy(isCompleted = !taskItem.isCompleted)
+                    } else {
+                        taskItem
+                    }
+                }
+            )
         }
     }
 }
