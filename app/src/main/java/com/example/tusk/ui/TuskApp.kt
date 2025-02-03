@@ -51,7 +51,7 @@ fun TuskApp(
             title = { Text(text = currentScreen.title) }
         )
     }, floatingActionButton = {
-        ExtendedFloatingActionButton(
+        if (currentScreen.name == TuskAppScreens.Home.name) ExtendedFloatingActionButton(
             onClick = {
                 navController.navigate(TuskAppScreens.Add.name)
             },
@@ -74,13 +74,13 @@ fun TuskApp(
                 .padding(innerPadding)
         ) {
             composable(route = TuskAppScreens.Home.name) {
-                HomeScreen()
+                HomeScreen(navigateToEditScreen = { navController.navigate(TuskAppScreens.Edit.name) })
             }
             composable(route = TuskAppScreens.Add.name) {
-                InputScreen(title = "Add a task")
+                InputScreen()
             }
             composable(route = TuskAppScreens.Edit.name) {
-                InputScreen(title = "Edit task")
+                InputScreen()
             }
         }
 

@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -33,20 +35,15 @@ import com.example.tusk.ui.theme.TuskTheme
 import java.util.Calendar
 
 @Composable
-fun InputScreen(title: String, onDone: (TaskItem) -> Unit = {}) {
+fun InputScreen( onDone: (TaskItem) -> Unit = {}) {
     var showTimePicker by remember { mutableStateOf(true) }
     var isToday by remember { mutableStateOf(true) }
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(state = rememberScrollState())
             .padding(horizontal = 12.dp)
     ) {
-        Text(
-            text = title, style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight(600)
-            )
-        )
-        Spacer(modifier = Modifier.height(32.dp))
         TextField(value = "", onValueChange = {}, modifier = Modifier.fillMaxWidth(), label = {
             Text(
                 text = "Name", style = MaterialTheme.typography.titleMedium
@@ -123,6 +120,6 @@ fun TimePicker(
 @Composable
 private fun InputScreenPreview() {
     TuskTheme {
-        InputScreen(title = "Add Tasks")
+        InputScreen()
     }
 }

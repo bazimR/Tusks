@@ -47,6 +47,7 @@ import com.example.tusk.ui.theme.TitleGrayColor
 
 @Composable
 fun HomeScreen(
+    navigateToEditScreen: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -57,20 +58,21 @@ fun HomeScreen(
         TodayTasks(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
+                .weight(1f),
+            navigateToEditScreen = navigateToEditScreen
         )
         //tomorrow section
         TomorrowTasks(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
+                .weight(1f), navigateToEditScreen = navigateToEditScreen
         )
 
     }
 }
 
 @Composable
-private fun TomorrowTasks(modifier: Modifier) {
+private fun TomorrowTasks(modifier: Modifier, navigateToEditScreen: () -> Unit) {
     Column(
         modifier = modifier
     ) {
@@ -93,14 +95,14 @@ private fun TomorrowTasks(modifier: Modifier) {
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             items(10) {
-                InActiveTaskItem()
+                InActiveTaskItem(navigateToEditScreen = navigateToEditScreen)
             }
         }
     }
 }
 
 @Composable
-private fun TodayTasks(modifier: Modifier) {
+private fun TodayTasks(modifier: Modifier, navigateToEditScreen: () -> Unit) {
     Column(
         modifier = modifier
     ) {
@@ -135,14 +137,14 @@ private fun TodayTasks(modifier: Modifier) {
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             items(10) {
-                ActiveTaskItem()
+                ActiveTaskItem(navigateToEditScreen)
             }
         }
     }
 }
 
 @Composable
-private fun InActiveTaskItem() {
+private fun InActiveTaskItem(navigateToEditScreen: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -186,13 +188,13 @@ private fun InActiveTaskItem() {
                 )
             )
         }
-        MinimalDropdownMenu()
+        MinimalDropdownMenu(navigateToEditScreen = navigateToEditScreen)
     }
 }
 
 
 @Composable
-private fun ActiveTaskItem() {
+private fun ActiveTaskItem(navigateToEditScreen: () -> Unit) {
     var checked by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
@@ -250,12 +252,12 @@ private fun ActiveTaskItem() {
                 )
             )
         }
-        MinimalDropdownMenu()
+        MinimalDropdownMenu(navigateToEditScreen)
     }
 }
 
 @Composable
-fun MinimalDropdownMenu() {
+fun MinimalDropdownMenu(navigateToEditScreen: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Box(
         modifier = Modifier
@@ -268,8 +270,8 @@ fun MinimalDropdownMenu() {
             onDismissRequest = { expanded = false }
         ) {
             DropdownMenuItem(
-                text = { Text("Option 1") },
-                onClick = { /* Do something... */ }
+                text = { Text("Edit task") },
+                onClick = { navigateToEditScreen() }
             )
             DropdownMenuItem(
                 text = { Text("Option 2") },
