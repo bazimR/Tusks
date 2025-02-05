@@ -17,6 +17,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
@@ -41,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.example.tusk.data.models.TaskItem
+import com.example.tusk.ui.theme.DeleteRed
 import com.example.tusk.ui.theme.GrayColorText
 import com.example.tusk.ui.theme.LightGrayText
 import com.example.tusk.ui.theme.MutedGrayColor
@@ -50,11 +53,14 @@ import com.example.tusk.ui.theme.TitleGrayColor
 
 @Composable
 fun HomeScreen(
-    navigateToEditScreen: () -> Unit,
+
     todayTasks: List<TaskItem>,
     tomorrowTasks: List<TaskItem>,
     handleTaskCompleted: (TaskItem) -> Unit,
-    deleteTask: (TaskItem) -> Unit
+    deleteTask: (TaskItem) -> Unit,
+    navigateToEdit: (Int) -> Unit,
+    isHideCompleted: Boolean,
+    hideCompleted: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -66,18 +72,21 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            navigateToEditScreen = navigateToEditScreen, todayTasks = todayTasks,
+            todayTasks = todayTasks,
             handleTaskCompleted = handleTaskCompleted,
-            deleteTask = deleteTask
+            deleteTask = deleteTask,
+            navigateToEdit = navigateToEdit,
+            isHideCompleted = isHideCompleted,
+            hideCompleted = hideCompleted
         )
         //tomorrow section
         TomorrowTasks(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            navigateToEditScreen = navigateToEditScreen,
             tomorrowTasks = tomorrowTasks,
-            deleteTask = deleteTask
+            deleteTask = deleteTask,
+            navigateToEdit = navigateToEdit
         )
 
     }
@@ -86,9 +95,10 @@ fun HomeScreen(
 @Composable
 private fun TomorrowTasks(
     modifier: Modifier,
-    navigateToEditScreen: () -> Unit,
     tomorrowTasks: List<TaskItem>,
-    deleteTask: (TaskItem) -> Unit
+    deleteTask: (TaskItem) -> Unit,
+    navigateToEdit: (Int) -> Unit
+
 ) {
     Column(
         modifier = modifier
@@ -122,11 +132,10 @@ private fun TomorrowTasks(
             } else {
                 items(tomorrowTasks) { item ->
                     InActiveTaskItem(
-                        navigateToEditScreen = navigateToEditScreen,
-                        taskItem = item,
-                        deleteTask = {
+                        taskItem = item, deleteTask = {
                             deleteTask(it)
-                        })
+                        }, navigateToEdit = navigateToEdit
+                    )
                 }
             }
         }
@@ -136,26 +145,29 @@ private fun TomorrowTasks(
 @Composable
 private fun TodayTasks(
     modifier: Modifier,
-    navigateToEditScreen: () -> Unit,
     todayTasks: List<TaskItem>,
     handleTaskCompleted: (TaskItem) -> Unit,
-    deleteTask: (TaskItem) -> Unit
+    deleteTask: (TaskItem) -> Unit,
+    navigateToEdit: (Int) -> Unit,
+    isHideCompleted: Boolean,
+    hideCompleted: () -> Unit
+
 ) {
     Column(
         modifier = modifier
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth(), Arrangement.SpaceBetween
+            modifier = Modifier.fillMaxWidth(), Arrangement.SpaceBetween
         ) {
             Text(
                 text = "Today", style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight(600)
                 )
             )
-            TextButton(onClick = {}) {
+            TextButton(onClick = hideCompleted) {
                 Text(
-                    "Hide completed", style = MaterialTheme.typography.labelMedium.copy(
+                    text = if (isHideCompleted) "Show completed" else "Hide completed",
+                    style = MaterialTheme.typography.labelMedium.copy(
                         color = TextButtonColor
                     )
                 )
@@ -185,12 +197,9 @@ private fun TodayTasks(
             } else {
                 items(todayTasks) { item ->
                     ActiveTaskItem(
-                        navigateToEditScreen,
-                        taskItem = item,
-                        handleTaskCompleted = handleTaskCompleted,
-                        deleteTask = {
+                        taskItem = item, handleTaskCompleted = handleTaskCompleted, deleteTask = {
                             deleteTask(it)
-                        }
+                        }, navigateToEdit = navigateToEdit
                     )
                 }
             }
@@ -200,9 +209,8 @@ private fun TodayTasks(
 
 @Composable
 private fun InActiveTaskItem(
-    navigateToEditScreen: () -> Unit,
-    taskItem: TaskItem,
-    deleteTask: (TaskItem) -> Unit
+    taskItem: TaskItem, deleteTask: (TaskItem) -> Unit, navigateToEdit: (Int) -> Unit
+
 ) {
     Row(
         modifier = Modifier
@@ -211,8 +219,7 @@ private fun InActiveTaskItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier
-                .size(48.dp) // Checkbox default size
+            modifier = Modifier.size(48.dp) // Checkbox default size
             , contentAlignment = Alignment.Center
         ) {
             Box(
@@ -240,26 +247,25 @@ private fun InActiveTaskItem(
                 )
             )
             Text(
-                text = taskItem.time,
-                maxLines = 2,
-                style = MaterialTheme.typography.bodySmall.copy(
+                text = taskItem.time, maxLines = 2, style = MaterialTheme.typography.bodySmall.copy(
                     color = LightGrayText,
                 )
             )
         }
-        MinimalDropdownMenu(navigateToEditScreen = navigateToEditScreen, deleteTask = {
+        MinimalDropdownMenu(deleteTask = {
             deleteTask(taskItem)
-        })
+        }, navigateToEdit = { navigateToEdit(taskItem.id) })
     }
 }
 
 
 @Composable
 private fun ActiveTaskItem(
-    navigateToEditScreen: () -> Unit,
     taskItem: TaskItem,
     handleTaskCompleted: (TaskItem) -> Unit,
-    deleteTask: (TaskItem) -> Unit
+    deleteTask: (TaskItem) -> Unit,
+    navigateToEdit: (Int) -> Unit
+
 ) {
     Row(
         modifier = Modifier
@@ -270,9 +276,7 @@ private fun ActiveTaskItem(
         Checkbox(
             onCheckedChange = {
                 handleTaskCompleted(taskItem)
-            },
-            checked = taskItem.isCompleted,
-            colors = CheckboxDefaults.colors(
+            }, checked = taskItem.isCompleted, colors = CheckboxDefaults.colors(
                 checkmarkColor = Color.White,
                 checkedColor = Color.Black,
 
@@ -285,11 +289,8 @@ private fun ActiveTaskItem(
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight(600),
                     color = if (taskItem.isCompleted) MutedGrayColor else TitleGrayColor,
-                    textDecoration =
-                    if (taskItem.isCompleted)
-                        TextDecoration.LineThrough
-                    else
-                        TextDecoration.None
+                    textDecoration = if (taskItem.isCompleted) TextDecoration.LineThrough
+                    else TextDecoration.None
                 )
             )
             Text(
@@ -297,34 +298,31 @@ private fun ActiveTaskItem(
                 maxLines = 2,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = if (taskItem.isCompleted) MutedGrayColor else GrayColorText,
-                    textDecoration =
-                    if (taskItem.isCompleted)
-                        TextDecoration.LineThrough
-                    else
-                        TextDecoration.None
+                    textDecoration = if (taskItem.isCompleted) TextDecoration.LineThrough
+                    else TextDecoration.None
                 )
             )
             Text(
-                text = taskItem.time,
-                maxLines = 2,
-                style = MaterialTheme.typography.bodySmall.copy(
+                text = taskItem.time, maxLines = 2, style = MaterialTheme.typography.bodySmall.copy(
                     color = if (taskItem.isCompleted) MutedGrayColor else LightGrayText,
-                    textDecoration =
-                    if (taskItem.isCompleted)
-                        TextDecoration.LineThrough
-                    else
-                        TextDecoration.None
+                    textDecoration = if (taskItem.isCompleted) TextDecoration.LineThrough
+                    else TextDecoration.None
                 )
             )
         }
-        MinimalDropdownMenu(navigateToEditScreen, deleteTask = {
+        MinimalDropdownMenu(deleteTask = {
             deleteTask(taskItem)
+        }, navigateToEdit = {
+            navigateToEdit(taskItem.id)
         })
     }
 }
 
 @Composable
-fun MinimalDropdownMenu(navigateToEditScreen: () -> Unit, deleteTask: () -> Unit) {
+fun MinimalDropdownMenu(
+    deleteTask: () -> Unit, navigateToEdit: () -> Unit
+
+) {
     var expanded by remember { mutableStateOf(false) }
     Box(
         modifier = Modifier
@@ -332,18 +330,29 @@ fun MinimalDropdownMenu(navigateToEditScreen: () -> Unit, deleteTask: () -> Unit
         IconButton(onClick = { expanded = !expanded }) {
             Icon(Icons.Default.MoreVert, contentDescription = "More options")
         }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            DropdownMenuItem(
-                text = { Text("Edit task") },
-                onClick = { navigateToEditScreen() }
-            )
-            DropdownMenuItem(
-                text = { Text("Option 2") },
-                onClick = { deleteTask() }
-            )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(text = { Text("Edit") }, onClick = {
+                expanded = false
+//                Log.d("navigation", "MinimalDropdownMenu: $taskId")
+//                navController.navigate("${TuskAppScreens.Edit.name}/$taskId")
+                navigateToEdit()
+            }, trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    tint = TextButtonColor,
+                    contentDescription = "Edit button"
+                )
+            })
+            DropdownMenuItem(text = { Text("Delete") }, onClick = {
+                expanded = false
+                deleteTask()
+            }, trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    tint = DeleteRed,
+                    contentDescription = "Delete button"
+                )
+            })
         }
     }
 }

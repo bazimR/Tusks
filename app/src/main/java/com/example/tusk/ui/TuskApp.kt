@@ -1,5 +1,7 @@
 package com.example.tusk.ui
 
+import android.system.ErrnoException
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -19,10 +21,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.tusk.data.models.TaskItem
 import com.example.tusk.ui.theme.LightGrayColorBackground
 import com.example.tusk.ui.theme.TuskTheme
@@ -31,8 +35,20 @@ import com.example.tusk.ui.viewmodel.TaskViewModel
 enum class TuskAppScreens(val title: String) {
     Home(title = "Home"),
     Add(title = "Add task"),
-    Edit(title = "Edit task")
+    Edit(title = "Edit task");
 
+    companion object {
+        fun fromRoute(route: String?): TuskAppScreens =
+            when {
+                route == null -> Home
+                route.startsWith(Edit.name) -> Edit  // Handle argument case
+                else -> try {
+                    valueOf(route)
+                } catch (e: IllegalArgumentException) {
+                    Home  // Default screen if invalid route
+                }
+            }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,8 +59,7 @@ fun TuskApp(
 ) {
     val uiState by viewModel.taskListUi.collectAsState()
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentScreen =
-        TuskAppScreens.valueOf(backStackEntry?.destination?.route ?: TuskAppScreens.Home.name)
+    val currentScreen = TuskAppScreens.fromRoute(backStackEntry?.destination?.route)
     Scaffold(modifier = Modifier
         .fillMaxSize()
         .background(LightGrayColorBackground), topBar = {
@@ -76,10 +91,10 @@ fun TuskApp(
         ) {
             composable(route = TuskAppScreens.Home.name) {
                 HomeScreen(
-                    navigateToEditScreen = { navController.navigate(TuskAppScreens.Edit.name) },
                     todayTasks = filterTodayAndTomorrowTasks(
                         taskList = uiState.tasks,
-                        isToday = true
+                        isToday = true,
+                        hideCompleted = uiState.hideCompleted
                     ),
                     tomorrowTasks = filterTodayAndTomorrowTasks(
                         taskList = uiState.tasks,
@@ -88,17 +103,48 @@ fun TuskApp(
                     handleTaskCompleted = { viewModel.taskComplete(it) },
                     deleteTask = {
                         viewModel.deleteTask(it.id)
+                    },
+                    navigateToEdit = {
+                        try {
+                            Log.d("nav", "TuskApp: ${TuskAppScreens.Edit.name}/$it")
+                            navController.navigate("Edit/$it")
+                        } catch (e: ErrnoException) {
+                            Log.d("nav error", "TuskApp: $e")
+                        }
+                    },
+                    isHideCompleted = uiState.hideCompleted,
+                    hideCompleted = {
+                        viewModel.hideCompleted()
                     }
                 )
             }
             composable(route = TuskAppScreens.Add.name) {
                 InputScreen(onDone = {
                     viewModel.addTask(it)
-                    navController.popBackStack()
+                    navController.navigate(TuskAppScreens.Home.name) {
+                        popUpTo(TuskAppScreens.Home.name) { inclusive = true }
+                    }
                 })
             }
-            composable(route = TuskAppScreens.Edit.name) {
-                InputScreen()
+            composable(
+                route = "Edit/{id}",
+                arguments = listOf(navArgument("id") {
+                    type = NavType.IntType
+                })
+            ) { navBackStackEntry ->
+                val id = navBackStackEntry.arguments?.getInt("id")
+                if (id != null) {
+                    val taskItem = viewModel.getTask(id)
+                    if (taskItem != null) {
+                        EditScreen(taskItem = taskItem, onDone = {
+                            viewModel.editTask(editedTask = it)
+                            navController.navigate(TuskAppScreens.Home.name) {
+                                popUpTo(TuskAppScreens.Home.name) { inclusive = true }
+                            }
+                        })
+                    }
+
+                } else navController.navigate(TuskAppScreens.Home.name)
             }
         }
 
@@ -107,17 +153,19 @@ fun TuskApp(
 
 private fun filterTodayAndTomorrowTasks(
     isToday: Boolean,
-    taskList: List<TaskItem>
+    taskList: List<TaskItem>,
+    hideCompleted: Boolean = false
 ): List<TaskItem> {
     if (isToday) {
         return taskList.filter { taskItem ->
-            taskItem.forToday
+            if (hideCompleted) taskItem.forToday && !taskItem.isCompleted else taskItem.forToday
         }
     }
     return taskList.filter { taskItem ->
         !taskItem.forToday
     }
 }
+
 
 @Preview(showBackground = true, name = "TuskAppPreview")
 @Composable

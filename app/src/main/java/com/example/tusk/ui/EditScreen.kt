@@ -27,18 +27,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tusk.data.models.TaskItem
-import com.example.tusk.ui.theme.TuskTheme
+
 
 @Composable
-fun InputScreen(onDone: (TaskItem) -> Unit = {}) {
+fun EditScreen(onDone: (TaskItem) -> Unit = {}, taskItem: TaskItem) {
     var showTimePicker by remember { mutableStateOf(false) }
-    var isToday by remember { mutableStateOf(true) }
-    var name by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var time by remember { mutableStateOf("9:00 AM") }
+    var isToday by remember { mutableStateOf(taskItem.forToday) }
+    var name by remember { mutableStateOf(taskItem.title) }
+    var description by remember { mutableStateOf(taskItem.desc) }
+    var time by remember { mutableStateOf(taskItem.time) }
 
     Column(
         modifier = Modifier
@@ -98,15 +97,14 @@ fun InputScreen(onDone: (TaskItem) -> Unit = {}) {
         }
         Spacer(modifier = Modifier.height(32.dp))
         Button(onClick = {
-            val newTaskItem =
-                TaskItem(
+            val editedTask =
+                taskItem.copy(
                     title = name,
                     desc = description,
                     time = time,
                     forToday = isToday,
                 )
-
-            onDone(newTaskItem)
+            onDone(editedTask)
         }, modifier = Modifier.fillMaxWidth()) {
             Text("Done", style = MaterialTheme.typography.bodyMedium)
         }
@@ -117,13 +115,5 @@ fun InputScreen(onDone: (TaskItem) -> Unit = {}) {
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun InputScreenPreview() {
-    TuskTheme {
-        InputScreen()
     }
 }
