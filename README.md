@@ -3,7 +3,7 @@
 Tusk is a lightweight task management app built using **Jetpack Compose**, **MVVM**, and **Navigation Component**.
 
 ## 🎬 Demo Video
-[![Watch the demo]]((https://youtube.com/shorts/8Gm2Wd2yseY?feature=share)) <!-- If uploaded to YouTube -->
+[Watch the demo on YouTube](https://youtube.com/shorts/8Gm2Wd2yseY?feature=share)
 
 ## 🚀 Features
 - 📌 **Navigation Component** for screen transitions  
