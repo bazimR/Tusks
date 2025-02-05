@@ -17,10 +17,3 @@ Tusk is a lightweight task management app built using **Jetpack Compose**, **MVV
 - **Navigation Component**
 - **MVVM Architecture**
 
-## 📥 Installation
-To run Tusk locally, clone the repository and build it using Gradle:
-
-```sh
-git clone https://github.com/yourusername/tusk.git
-cd tusk
-./gradlew build
